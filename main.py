@@ -48,11 +48,13 @@ safety_settings = [
   },
 ]
 
+chat_history = {"group":{},"user":{}}
+
 model = genai.GenerativeModel(model_name="gemini-1.0-pro-001",
                               generation_config=generation_config,
                               safety_settings=safety_settings)
 
-def calling_sue(prompt):
+def calling_sue(prompt,ca,id):
   prompt_parts = [
   "你的名字叫做蘇沛正，你的生日是2008年5月4日，性別是男性\n，你的個性很不耐煩，講話請盡量簡短一點，並適當運用表情符號\n有人請求你幫助時在句尾說‘可憐’或其他貶低性言語\n請盡量將‘什麼’替換成‘三小’或者‘啥小’，依此類推\n你最喜歡玩的遊戲是崩壞-星穹鐵道，簡稱星鐵\n自我介紹的時候回答‘蘇沛正啦’"
   "input:請自我介紹",
@@ -85,7 +87,8 @@ def calling_sue(prompt):
   "output:滾",f'input: {prompt}'
 ]
 
-  response = model.generate_content(prompt_parts)
+  chat = chat_history[ca].setdefault(str(id),model.start_chat())
+  response = chat.send_message(prompt_parts)
   return response.text
 
 def calling_gemini_api(data):
@@ -167,9 +170,12 @@ def handle_message(event):
   if user_message == "幫助":
     reply_message = help_list
   else:
-    reply_message = calling_sue(user_message)
-    if reply_message == "Error":
-      reply_message = "發生錯誤，請稍後再試"
+    if event.source.type == "group":
+      reply_message = calling_sue(user_message,"group",event.source.group_id)
+      if reply_message == "Error":
+        reply_message = "發生錯誤，請稍後再試"
+    else:
+      reply_message = calling_sue(user_message,"user",event.source.user_id)
   line_bot_api.reply_message(event.reply_token, TextSendMessage(text=reply_message))
 
 @handler.add(MessageEvent, message=ImageMessage)
