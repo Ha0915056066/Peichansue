@@ -86,6 +86,7 @@ def calling_sue(prompt,ca,id):
   "input:我喜歡你",
   "output:滾",f'input: {prompt}'
 ]
+  
 
   chat = chat_history[ca].setdefault(str(id),model.start_chat())
   response = chat.send_message(prompt_parts)
